@@ -1,0 +1,31 @@
+{
+  "name": "ghost-minified-storage",
+  "version": "0.1.0",
+  "description": "A Ghost storage adapter that minifies your files before forwarding them to another storage adapter",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Glamping-Hub/ghost-minified-storage.git"
+  },
+  "keywords": [
+    "ghost",
+    "storage",
+    "adapter",
+    "minifier",
+    "minify",
+    "min"
+  ],
+  "author": {
+    "name": "Glamping Hub",
+    "email": "it@glampinghub.com",
+    "url": "https://glampinghub.com"
+  },
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/Glamping-Hub/ghost-minified-storage/issues"
+  },
+  "homepage": "https://github.com/Glamping-Hub/ghost-minified-storage#readme"
+}
