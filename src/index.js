@@ -21,8 +21,21 @@ class Store extends BaseStore {
             throw 'You must configure the "nextStorage" property for the "Ghost Minified Storage"!';
         }
 
-        // CASE: load adapter from custom path  (.../content/storage)
-        var NextStorage = require(config.paths.storagePath.custom + storageConfig.nextStorage)
+        var NextStorage;
+
+        try {
+            // CASE: load adapter from custom path  (.../content/storage)
+            NextStorage = require(config.paths.storagePath.custom + storageConfig.nextStorage)
+        } catch (err) {
+            // CASE: only throw error if module does exist
+            if (err.code !== 'MODULE_NOT_FOUND') {
+                throw err.message;
+            }
+
+            // CASE: either storage[storageChoice] is already set or why check for in the default storage path
+            NextStorage = require(config.paths.storagePath.default + storageConfig.nextStorage);
+        }
+
         this.nextStorageInstance = new NextStorage(config.storage[storageConfig.nextStorage])
     }
 

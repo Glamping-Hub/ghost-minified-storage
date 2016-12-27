@@ -68,7 +68,18 @@ var Store = function (_BaseStore) {
             throw 'You must configure the "nextStorage" property for the "Ghost Minified Storage"!';
         }
 
-        var NextStorage = require(_config2.default.paths.storagePath.custom + storageConfig.nextStorage);
+        var NextStorage;
+
+        try {
+            NextStorage = require(_config2.default.paths.storagePath.custom + storageConfig.nextStorage);
+        } catch (err) {
+            if (err.code !== 'MODULE_NOT_FOUND') {
+                throw err.message;
+            }
+
+            NextStorage = require(_config2.default.paths.storagePath.default + storageConfig.nextStorage);
+        }
+
         _this.nextStorageInstance = new NextStorage(_config2.default.storage[storageConfig.nextStorage]);
         return _this;
     }
