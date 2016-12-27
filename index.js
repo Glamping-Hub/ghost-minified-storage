@@ -88,6 +88,7 @@ var Store = function (_BaseStore) {
         key: 'save',
         value: function save(file, targetDir) {
             var that = this;
+
             return new _bluebird2.default(function (resolve, reject) {
                 _tmp2.default.dir(function (err, path, cleanupCallback) {
                     if (err) {
@@ -104,7 +105,7 @@ var Store = function (_BaseStore) {
 
                             resolve(that.nextStorageInstance.save(file, targetDir));
                         }).finally(function () {
-                            return cleanupCallback();
+                            cleanupCallback();
                         });
                     });
                 });
