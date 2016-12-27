@@ -4,7 +4,7 @@
 /*jslint node: true, es6: true */
 /*global */
 
-import path from 'path';
+var path = require('path');
 import BaseStore from '../../../core/server/storage/base';
 import config from '../../../core/server/config';
 import Promise from 'bluebird';
@@ -46,7 +46,7 @@ class Store extends BaseStore {
         var that = this;
 
         return new Promise(function (resolve, reject) {
-            tmp.dir(function (err, path, cleanupCallback) {
+            tmp.dir(function (err, tmpPath, cleanupCallback) {
                 if (err) {
                     throw err
                 }
@@ -59,25 +59,28 @@ class Store extends BaseStore {
                 sharp(file.name)
                     .resize(1024, 1024)
                     .max()
-                    .toFile(path.join(path, hash + file.name), function (err, info) {
+                    .toFile(path.join(tmpPath, hash + file.name), function (err, info) {
 
                         // Minify image
-                        imagemin([path.join(path, hash + file.name)], path, {
+                        imagemin([path.join(tmpPath, hash + file.name)], tmpPath, {
                             plugins: [
                                 imageminGifsicle(),
                                 imageminJpegtran(),
                                 imageminOptipng()
                             ]
                         }).then(function (files) {
-
                             // console.log(files);
                             //   => [{data: <Buffer 89 50 4e …>, path: 'build/images/foo.jpg'}, …]
-                            var file = files[0];
+                            var minifiedFile = files[0];
 
-                            resolve(that.nextStorageInstance.save(file, targetDir));
-                        }).finally(function () {
-                            //TODO
+                            resolve(that.nextStorageInstance.save({ path: path.join(tmpPath, minifiedFile.path) }, targetDir));
+
+                            //TODO make sure the callback deletes the files in the directory
                             cleanupCallback();
+                        }).catch(function (error) {
+                            //TODO make sure the callback deletes the files in the directory
+                            cleanupCallback();
+                            reject(error);
                         });
                     });
             });

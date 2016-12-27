@@ -6,10 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _path = require('path');
-
-var _path2 = _interopRequireDefault(_path);
-
 var _base = require('../../../core/server/storage/base');
 
 var _base2 = _interopRequireDefault(_base);
@@ -54,6 +50,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var path = require('path');
+
 var Store = function (_BaseStore) {
     _inherits(Store, _BaseStore);
 
@@ -90,22 +88,25 @@ var Store = function (_BaseStore) {
             var that = this;
 
             return new _bluebird2.default(function (resolve, reject) {
-                _tmp2.default.dir(function (err, path, cleanupCallback) {
+                _tmp2.default.dir(function (err, tmpPath, cleanupCallback) {
                     if (err) {
                         throw err;
                     }
 
                     var hash = 'prehash_';
 
-                    (0, _sharp2.default)(file.name).resize(1024, 1024).max().toFile(path.join(path, hash + file.name), function (err, info) {
-                        (0, _imagemin2.default)([path.join(path, hash + file.name)], path, {
+                    (0, _sharp2.default)(file.name).resize(1024, 1024).max().toFile(path.join(tmpPath, hash + file.name), function (err, info) {
+                        (0, _imagemin2.default)([path.join(tmpPath, hash + file.name)], tmpPath, {
                             plugins: [(0, _imageminGifsicle2.default)(), (0, _imageminJpegtran2.default)(), (0, _imageminOptipng2.default)()]
                         }).then(function (files) {
-                            var file = files[0];
+                            var minifiedFile = files[0];
 
-                            resolve(that.nextStorageInstance.save(file, targetDir));
-                        }).finally(function () {
+                            resolve(that.nextStorageInstance.save({ path: path.join(tmpPath, minifiedFile.path) }, targetDir));
+
                             cleanupCallback();
+                        }).catch(function (error) {
+                            cleanupCallback();
+                            reject(error);
                         });
                     });
                 });
