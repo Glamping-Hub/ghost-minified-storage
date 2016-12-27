@@ -43,26 +43,35 @@ class Store extends BaseStore {
     }
 
     save (file, targetDir) {
-        var that = this;
+        /* file =
+        < { fieldname: 'uploadimage',
+        <   originalname: 'example.png',
+        <   encoding: '7bit',
+        <   mimetype: 'image/png',
+        <   destination: '/tmp',
+        <   filename: '67cc4b2c69cbf07d5839fbdb8ec76c44',
+        <   path: '/tmp/67cc4b2c69cbf07d5839fbdb8ec76c44',
+        <   size: 371703,
+        <   name: 'example.png',
+        <   type: 'image/png',
+        <   context: { user: 1, client: null } }
+        */
+
+        var nextStorageInstance = this.nextStorageInstance;
 
         return new Promise(function (resolve, reject) {
-            tmp.dir(function (err, tmpPath, cleanupCallback) {
-                if (err) {
-                    throw err
-                }
+            //TODO Save original image if needs
 
-                //TODO original image hash
-                var hash = 'prehash_';
-                //TODO Save original image if needs
-
+            tmp.file(function (err, tmpFilePath, fd, cleanupCallback) {
                 // Resize image
-                sharp(file.name)
+                sharp(file.path)
                     .resize(1024, 1024)
                     .max()
-                    .toFile(path.join(tmpPath, hash + file.name), function (err, info) {
+                    .toFile(tmpFilePath, function (err, info) {
+                        if (err) { throw err; }
 
                         // Minify image
-                        imagemin([path.join(tmpPath, hash + file.name)], tmpPath, {
+                        imagemin([tmpFilePath], '', {
                             plugins: [
                                 imageminGifsicle(),
                                 imageminJpegtran(),
@@ -73,14 +82,15 @@ class Store extends BaseStore {
                             //   => [{data: <Buffer 89 50 4e …>, path: 'build/images/foo.jpg'}, …]
                             var minifiedFile = files[0];
 
-                            resolve(that.nextStorageInstance.save({ path: path.join(tmpPath, minifiedFile.path) }, targetDir));
-
-                            //TODO make sure the callback deletes the files in the directory
-                            cleanupCallback();
+                            nextStorageInstance
+                                .save({ path: minifiedFile.path }, targetDir)
+                                .then(function () {
+                                    resolve();
+                                    cleanupCallback();
+                                });
                         }).catch(function (error) {
-                            //TODO make sure the callback deletes the files in the directory
-                            cleanupCallback();
                             reject(error);
+                            cleanupCallback();
                         });
                     });
             });

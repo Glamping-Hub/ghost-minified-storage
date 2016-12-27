@@ -85,28 +85,29 @@ var Store = function (_BaseStore) {
     _createClass(Store, [{
         key: 'save',
         value: function save(file, targetDir) {
-            var that = this;
+
+            var nextStorageInstance = this.nextStorageInstance;
 
             return new _bluebird2.default(function (resolve, reject) {
-                _tmp2.default.dir(function (err, tmpPath, cleanupCallback) {
-                    if (err) {
-                        throw err;
-                    }
 
-                    var hash = 'prehash_';
+                _tmp2.default.file(function (err, tmpFilePath, fd, cleanupCallback) {
+                    (0, _sharp2.default)(file.path).resize(1024, 1024).max().toFile(tmpFilePath, function (err, info) {
+                        if (err) {
+                            throw err;
+                        }
 
-                    (0, _sharp2.default)(file.name).resize(1024, 1024).max().toFile(path.join(tmpPath, hash + file.name), function (err, info) {
-                        (0, _imagemin2.default)([path.join(tmpPath, hash + file.name)], tmpPath, {
+                        (0, _imagemin2.default)([tmpFilePath], '', {
                             plugins: [(0, _imageminGifsicle2.default)(), (0, _imageminJpegtran2.default)(), (0, _imageminOptipng2.default)()]
                         }).then(function (files) {
                             var minifiedFile = files[0];
 
-                            resolve(that.nextStorageInstance.save({ path: path.join(tmpPath, minifiedFile.path) }, targetDir));
-
-                            cleanupCallback();
+                            nextStorageInstance.save({ path: minifiedFile.path }, targetDir).then(function () {
+                                resolve();
+                                cleanupCallback();
+                            });
                         }).catch(function (error) {
-                            cleanupCallback();
                             reject(error);
+                            cleanupCallback();
                         });
                     });
                 });
