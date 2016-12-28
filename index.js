@@ -6,16 +6,16 @@
 'use strict';
 
 // import path from 'path';
-import util from 'util';
-import BaseStore from '../../../core/server/storage/base';
-import config from '../../../core/server/config';
-import Promise from 'bluebird';
-import tmp from 'tmp';
-import sharp from 'sharp';
-import imagemin from 'imagemin';
-import imageminGifsicle from 'imagemin-gifsicle';
-import imageminJpegtran from 'imagemin-jpegtran';
-import imageminOptipng from 'imagemin-optipng';
+var util = require('util');
+var BaseStore = require('../../../core/server/storage/base');
+var config = require('../../../core/server/config');
+var Promise = require('bluebird');
+var tmp = require('tmp');
+var sharp = require('sharp');
+var imagemin = require('imagemin');
+var imageminGifsicle = require('imagemin-gifsicle');
+var imageminJpegtran = require('imagemin-jpegtran');
+var imageminOptipng = require('imagemin-optipng');
 
 
 tmp.setGracefulCleanup();
