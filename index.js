@@ -1,11 +1,10 @@
 // Copyright (C) 2016 Glamping Hub (https://glampinghub.com)
 // License: BSD 3-Clause
 
-/*jslint node: true, es6: true, single: true, this: true */
+/*jslint node: true, single: true, this: true */
 
 'use strict';
 
-// import path from 'path';
 var util = require('util');
 var BaseStore = require('../../../core/server/storage/base');
 var config = require('../../../core/server/config');
@@ -27,8 +26,8 @@ function MinifyStore(config) {
 
 util.inherits(MinifyStore, BaseStore);
 
-MinifyStore.prototype.constructor = function (storageConfig = {}) {
-    if (!storageConfig.hasOwnProperty('nextStorage')) {
+MinifyStore.prototype.constructor = function (storageConfig) {
+    if (!storageConfig || !storageConfig.hasOwnProperty('nextStorage')) {
         throw 'You must configure the "nextStorage" property for the "Ghost Minified Storage"!';
     }
 
@@ -76,7 +75,9 @@ MinifyStore.prototype.save = function (file, targetDir) {
                 .resize(1024, 1024)
                 .max()
                 .toFile(tmpFilePath, function (err, info) {
-                    if (err) { throw err; }
+                    if (err) {
+                        throw err;
+                    }
 
                     // Minify image
                     //FIXME: Remove hardcoded "/tmp/"
