@@ -1,15 +1,10 @@
 
+
 'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
+var _util = require('util');
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _path = require('path');
-
-var _path2 = _interopRequireDefault(_path);
+var _util2 = _interopRequireDefault(_util);
 
 var _base = require('../../../core/server/storage/base');
 
@@ -49,98 +44,81 @@ var _imageminOptipng2 = _interopRequireDefault(_imageminOptipng);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
 _tmp2.default.setGracefulCleanup();
 
-var Store = function (_BaseStore) {
-    _inherits(Store, _BaseStore);
+function MinifyStore(config) {
+    _base2.default.call(this);
+    this.constructor(config);
+}
 
-    function Store() {
-        var storageConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+_util2.default.inherits(MinifyStore, _base2.default);
 
-        _classCallCheck(this, Store);
+MinifyStore.prototype.constructor = function () {
+    var storageConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-        var _this = _possibleConstructorReturn(this, (Store.__proto__ || Object.getPrototypeOf(Store)).call(this, storageConfig));
-
-        if (!storageConfig.hasOwnProperty('nextStorage')) {
-            throw 'You must configure the "nextStorage" property for the "Ghost Minified Storage"!';
-        }
-
-        var NextStorage;
-
-        try {
-            NextStorage = require(_config2.default.paths.storagePath.custom + storageConfig.nextStorage);
-        } catch (err) {
-            if (err.code !== 'MODULE_NOT_FOUND') {
-                throw err.message;
-            }
-
-            NextStorage = require(_config2.default.paths.storagePath.default + storageConfig.nextStorage);
-        }
-
-        _this.nextStorageInstance = new NextStorage(_config2.default.storage[storageConfig.nextStorage]);
-        return _this;
+    if (!storageConfig.hasOwnProperty('nextStorage')) {
+        throw 'You must configure the "nextStorage" property for the "Ghost Minified Storage"!';
     }
 
-    _createClass(Store, [{
-        key: 'save',
-        value: function save(file, targetDir) {
+    var NextStorage;
 
-            var nextStorageInstance = this.nextStorageInstance;
+    try {
+        NextStorage = require(_config2.default.paths.storagePath.custom + storageConfig.nextStorage);
+    } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+            throw err.message;
+        }
 
-            return new _bluebird2.default(function (resolve, reject) {
+        NextStorage = require(_config2.default.paths.storagePath.default + storageConfig.nextStorage);
+    }
 
-                _tmp2.default.file(function (err, tmpFilePath, fd, cleanupCallback) {
-                    (0, _sharp2.default)(file.path).resize(1024, 1024).max().toFile(tmpFilePath, function (err, info) {
-                        if (err) {
-                            throw err;
-                        }
+    this.nextStorageInstance = new NextStorage(_config2.default.storage[storageConfig.nextStorage]);
+};
 
-                        (0, _imagemin2.default)([tmpFilePath], '/tmp/', {
-                            plugins: [(0, _imageminGifsicle2.default)(), (0, _imageminJpegtran2.default)(), (0, _imageminOptipng2.default)()]
-                        }).then(function (files) {
+MinifyStore.prototype.save = function (file, targetDir) {
 
-                            var newFileObject = JSON.parse(JSON.stringify(file));
+    var nextStorageInstance = this.nextStorageInstance;
 
-                            newFileObject.path = files[0].path;
+    return new _bluebird2.default(function (resolve, reject) {
+
+        _tmp2.default.file(function (err, tmpFilePath, fd, cleanupCallback) {
+            (0, _sharp2.default)(file.path).resize(1024, 1024).max().toFile(tmpFilePath, function (err, info) {
+                if (err) {
+                    throw err;
+                }
+
+                (0, _imagemin2.default)([tmpFilePath], '/tmp/', {
+                    plugins: [(0, _imageminGifsicle2.default)(), (0, _imageminJpegtran2.default)(), (0, _imageminOptipng2.default)()]
+                }).then(function (files) {
+
+                    var newFileObject = JSON.parse(JSON.stringify(file));
+
+                    newFileObject.path = files[0].path;
 
 
-                            nextStorageInstance.save(newFileObject, targetDir).then(function (image) {
-                                resolve(image);
-                                cleanupCallback();
-                            });
-                        }).catch(function (error) {
-                            reject(error);
-                            cleanupCallback();
-                        });
+                    nextStorageInstance.save(newFileObject, targetDir).then(function (image) {
+                        resolve(image);
+                        cleanupCallback();
                     });
+                }).catch(function (error) {
+                    reject(error);
+                    cleanupCallback();
                 });
             });
-        }
-    }, {
-        key: 'exists',
-        value: function exists() {
-            return this.nextStorageInstance.exists.apply(this.nextStorageInstance, arguments);
-        }
-    }, {
-        key: 'serve',
-        value: function serve() {
-            return this.nextStorageInstance.serve.apply(this.nextStorageInstance, arguments);
-        }
-    }, {
-        key: 'delete',
-        value: function _delete() {
-            return this.nextStorageInstance.delete.apply(this.nextStorageInstance, arguments);
-        }
-    }]);
+        });
+    });
+};
 
-    return Store;
-}(_base2.default);
+MinifyStore.prototype.exists = function () {
+    return this.nextStorageInstance.exists.apply(this.nextStorageInstance, arguments);
+};
 
-exports.default = Store;
-module.exports = exports['default'];
+MinifyStore.prototype.serve = function () {
+    return this.nextStorageInstance.serve.apply(this.nextStorageInstance, arguments);
+};
+
+MinifyStore.prototype.delete = function () {
+    return this.nextStorageInstance.delete.apply(this.nextStorageInstance, arguments);
+};
+
+module.exports = MinifyStore;
