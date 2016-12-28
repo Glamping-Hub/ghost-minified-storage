@@ -1,61 +1,33 @@
+// Copyright (C) 2016 Glamping Hub (https://glampinghub.com)
+// License: BSD 3-Clause
 
+/*jslint node: true, es6: true, single: true, this: true */
 
 'use strict';
 
-var _util = require('util');
+// import path from 'path';
+import util from 'util';
+import BaseStore from '../../../core/server/storage/base';
+import config from '../../../core/server/config';
+import Promise from 'bluebird';
+import tmp from 'tmp';
+import sharp from 'sharp';
+import imagemin from 'imagemin';
+import imageminGifsicle from 'imagemin-gifsicle';
+import imageminJpegtran from 'imagemin-jpegtran';
+import imageminOptipng from 'imagemin-optipng';
 
-var _util2 = _interopRequireDefault(_util);
 
-var _base = require('../../../core/server/storage/base');
-
-var _base2 = _interopRequireDefault(_base);
-
-var _config = require('../../../core/server/config');
-
-var _config2 = _interopRequireDefault(_config);
-
-var _bluebird = require('bluebird');
-
-var _bluebird2 = _interopRequireDefault(_bluebird);
-
-var _tmp = require('tmp');
-
-var _tmp2 = _interopRequireDefault(_tmp);
-
-var _sharp = require('sharp');
-
-var _sharp2 = _interopRequireDefault(_sharp);
-
-var _imagemin = require('imagemin');
-
-var _imagemin2 = _interopRequireDefault(_imagemin);
-
-var _imageminGifsicle = require('imagemin-gifsicle');
-
-var _imageminGifsicle2 = _interopRequireDefault(_imageminGifsicle);
-
-var _imageminJpegtran = require('imagemin-jpegtran');
-
-var _imageminJpegtran2 = _interopRequireDefault(_imageminJpegtran);
-
-var _imageminOptipng = require('imagemin-optipng');
-
-var _imageminOptipng2 = _interopRequireDefault(_imageminOptipng);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-_tmp2.default.setGracefulCleanup();
+tmp.setGracefulCleanup();
 
 function MinifyStore(config) {
-    _base2.default.call(this);
+    BaseStore.call(this);
     this.constructor(config);
 }
 
-_util2.default.inherits(MinifyStore, _base2.default);
+util.inherits(MinifyStore, BaseStore);
 
-MinifyStore.prototype.constructor = function () {
-    var storageConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
+MinifyStore.prototype.constructor = function (storageConfig = {}) {
     if (!storageConfig.hasOwnProperty('nextStorage')) {
         throw 'You must configure the "nextStorage" property for the "Ghost Minified Storage"!';
     }
@@ -63,48 +35,77 @@ MinifyStore.prototype.constructor = function () {
     var NextStorage;
 
     try {
-        NextStorage = require(_config2.default.paths.storagePath.custom + storageConfig.nextStorage);
+        // CASE: load adapter from custom path  (.../content/storage)
+        NextStorage = require(config.paths.storagePath.custom + storageConfig.nextStorage);
     } catch (err) {
+        // CASE: only throw error if module does exist
         if (err.code !== 'MODULE_NOT_FOUND') {
             throw err.message;
         }
 
-        NextStorage = require(_config2.default.paths.storagePath.default + storageConfig.nextStorage);
+        // CASE: either storage[storageChoice] is already set or why check for in the default storage path
+        NextStorage = require(config.paths.storagePath.default + storageConfig.nextStorage);
     }
 
-    this.nextStorageInstance = new NextStorage(_config2.default.storage[storageConfig.nextStorage]);
+    this.nextStorageInstance = new NextStorage(config.storage[storageConfig.nextStorage]);
 };
 
 MinifyStore.prototype.save = function (file, targetDir) {
+    /* file =
+    < { fieldname: 'uploadimage',
+    <   originalname: 'example.png',
+    <   encoding: '7bit',
+    <   mimetype: 'image/png',
+    <   destination: '/tmp',
+    <   filename: '67cc4b2c69cbf07d5839fbdb8ec76c44',
+    <   path: '/tmp/67cc4b2c69cbf07d5839fbdb8ec76c44',
+    <   size: 371703,
+    <   name: 'example.png',
+    <   type: 'image/png',
+    <   context: { user: 1, client: null } }
+    */
 
     var nextStorageInstance = this.nextStorageInstance;
 
-    return new _bluebird2.default(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
+        //TODO Save original image if needs
 
-        _tmp2.default.file(function (err, tmpFilePath, fd, cleanupCallback) {
-            (0, _sharp2.default)(file.path).resize(1024, 1024).max().toFile(tmpFilePath, function (err, info) {
-                if (err) {
-                    throw err;
-                }
+        tmp.file(function (err, tmpFilePath, fd, cleanupCallback) {
+            // Resize image
+            sharp(file.path)
+                .resize(1024, 1024)
+                .max()
+                .toFile(tmpFilePath, function (err, info) {
+                    if (err) { throw err; }
 
-                (0, _imagemin2.default)([tmpFilePath], '/tmp/', {
-                    plugins: [(0, _imageminGifsicle2.default)(), (0, _imageminJpegtran2.default)(), (0, _imageminOptipng2.default)()]
-                }).then(function (files) {
+                    // Minify image
+                    //FIXME: Remove hardcoded "/tmp/"
+                    imagemin([tmpFilePath], '/tmp/', {
+                        plugins: [
+                            imageminGifsicle(),
+                            imageminJpegtran(),
+                            imageminOptipng()
+                        ]
+                    }).then(function (files) {
+                        // console.log(files);
+                        //   => [{data: <Buffer 89 50 4e …>, path: 'build/images/foo.jpg'}, …]
 
-                    var newFileObject = JSON.parse(JSON.stringify(file));
+                        var newFileObject = JSON.parse(JSON.stringify(file));
+                        //newFileObject.filename = '';
+                        newFileObject.path = files[0].path;
+                        //delete newFileObject.size;
 
-                    newFileObject.path = files[0].path;
-
-
-                    nextStorageInstance.save(newFileObject, targetDir).then(function (image) {
-                        resolve(image);
+                        nextStorageInstance
+                            .save(newFileObject, targetDir)
+                            .then(function (image) {
+                                resolve(image);
+                                cleanupCallback();
+                            });
+                    }).catch(function (error) {
+                        reject(error);
                         cleanupCallback();
                     });
-                }).catch(function (error) {
-                    reject(error);
-                    cleanupCallback();
                 });
-            });
         });
     });
 };
@@ -118,6 +119,7 @@ MinifyStore.prototype.serve = function () {
 };
 
 MinifyStore.prototype.delete = function () {
+    //TODO Delete original image if needs
     return this.nextStorageInstance.delete.apply(this.nextStorageInstance, arguments);
 };
 
