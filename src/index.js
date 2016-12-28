@@ -1,10 +1,10 @@
 // Copyright (C) 2016 Glamping Hub (https://glampinghub.com)
 // License: BSD 3-Clause
 
-/*jslint node: true, es6: true */
+/*jslint node: true, es6: true, single: true */
 /*global */
 
-var path = require('path');
+import path from 'path';
 import BaseStore from '../../../core/server/storage/base';
 import config from '../../../core/server/config';
 import Promise from 'bluebird';
