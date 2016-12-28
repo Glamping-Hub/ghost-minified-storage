@@ -17,6 +17,8 @@ import imageminJpegtran from 'imagemin-jpegtran';
 import imageminOptipng from 'imagemin-optipng';
 
 
+tmp.setGracefulCleanup();
+
 class Store extends BaseStore {
     constructor (storageConfig = {}) {
         super(storageConfig);
@@ -90,8 +92,8 @@ class Store extends BaseStore {
 
                             nextStorageInstance
                                 .save(newFileObject, targetDir)
-                                .then(function () {
-                                    resolve();
+                                .then(function (image) {
+                                    resolve(image);
                                     cleanupCallback();
                                 });
                         }).catch(function (error) {
