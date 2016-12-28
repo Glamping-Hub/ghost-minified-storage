@@ -1,3 +1,4 @@
+
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -96,12 +97,16 @@ var Store = function (_BaseStore) {
                             throw err;
                         }
 
-                        (0, _imagemin2.default)([tmpFilePath], '', {
+                        (0, _imagemin2.default)([tmpFilePath], '/tmp/', {
                             plugins: [(0, _imageminGifsicle2.default)(), (0, _imageminJpegtran2.default)(), (0, _imageminOptipng2.default)()]
                         }).then(function (files) {
-                            var minifiedFile = files[0];
 
-                            nextStorageInstance.save({ path: minifiedFile.path }, targetDir).then(function () {
+                            var newFileObject = JSON.parse(JSON.stringify(file));
+
+                            newFileObject.path = files[0].path;
+
+
+                            nextStorageInstance.save(newFileObject, targetDir).then(function () {
                                 resolve();
                                 cleanupCallback();
                             });
@@ -115,18 +120,18 @@ var Store = function (_BaseStore) {
         }
     }, {
         key: 'exists',
-        value: function exists(filename) {
-            return this.nextStorageInstance.exists(filename);
+        value: function exists() {
+            return this.nextStorageInstance.exists.apply(this.nextStorageInstance, arguments);
         }
     }, {
         key: 'serve',
-        value: function serve(options) {
-            return this.nextStorageInstance.serve(options);
+        value: function serve() {
+            return this.nextStorageInstance.serve.apply(this.nextStorageInstance, arguments);
         }
     }, {
         key: 'delete',
-        value: function _delete(fileName, targetDir) {
-            return this.nextStorageInstance.delete(fileName, targetDir);
+        value: function _delete() {
+            return this.nextStorageInstance.delete.apply(this.nextStorageInstance, arguments);
         }
     }]);
 

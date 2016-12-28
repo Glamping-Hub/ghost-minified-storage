@@ -3,6 +3,7 @@
 
 /*jslint node: true, es6: true, single: true */
 /*global */
+'use strict';
 
 import path from 'path';
 import BaseStore from '../../../core/server/storage/base';
@@ -71,7 +72,8 @@ class Store extends BaseStore {
                         if (err) { throw err; }
 
                         // Minify image
-                        imagemin([tmpFilePath], '', {
+                        //FIXME: Remove hardcoded "/tmp/"
+                        imagemin([tmpFilePath], '/tmp/', {
                             plugins: [
                                 imageminGifsicle(),
                                 imageminJpegtran(),
@@ -80,10 +82,14 @@ class Store extends BaseStore {
                         }).then(function (files) {
                             // console.log(files);
                             //   => [{data: <Buffer 89 50 4e …>, path: 'build/images/foo.jpg'}, …]
-                            var minifiedFile = files[0];
+
+                            var newFileObject = JSON.parse(JSON.stringify(file));
+                            //newFileObject.filename = '';
+                            newFileObject.path = files[0].path;
+                            //delete newFileObject.size;
 
                             nextStorageInstance
-                                .save({ path: minifiedFile.path }, targetDir)
+                                .save(newFileObject, targetDir)
                                 .then(function () {
                                     resolve();
                                     cleanupCallback();
@@ -97,17 +103,17 @@ class Store extends BaseStore {
         });
     }
 
-    exists (filename) {
-        return this.nextStorageInstance.exists(filename);
+    exists () {
+        return this.nextStorageInstance.exists.apply(this.nextStorageInstance, arguments);
     }
 
-    serve (options) {
-        return this.nextStorageInstance.serve(options);
+    serve () {
+        return this.nextStorageInstance.serve.apply(this.nextStorageInstance, arguments);
     }
 
-    delete (fileName, targetDir) {
+    delete () {
         //TODO Delete original image if needs
-        return this.nextStorageInstance.delete(fileName, targetDir);
+        return this.nextStorageInstance.delete.apply(this.nextStorageInstance, arguments);
     }
 }
 
