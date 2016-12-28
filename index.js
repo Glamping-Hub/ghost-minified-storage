@@ -69,12 +69,16 @@ MinifyStore.prototype.save = function (file, targetDir) {
     return new Promise(function (resolve, reject) {
         //TODO Save original image if needs
 
-        tmp.file(function (err, tmpFilePath, fd, cleanupCallback) {
+        tmp.file(function (err, tmpFilePath, ignore, cleanupCallback) {
+            if (err) {
+                throw err;
+            }
+
             // Resize image
             sharp(file.path)
                 .resize(1024, 1024)
                 .max()
-                .toFile(tmpFilePath, function (err, info) {
+                .toFile(tmpFilePath, function (err, ignore) {
                     if (err) {
                         throw err;
                     }
