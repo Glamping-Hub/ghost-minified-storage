@@ -97,7 +97,7 @@ MinifyStore.prototype.save = function (file, targetDir) {
                 });
 
             if (that.maxWidth || that.maxHeight) {
-                buffer = buffer.resize(1024, 1024).max();
+                buffer = buffer.resize(that.maxWidth, that.maxHeight).max();
             }
             buffer.toBuffer(function (err, buffer, info) {
                 if (err) {
