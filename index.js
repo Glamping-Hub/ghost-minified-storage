@@ -6,10 +6,30 @@
 'use strict';
 
 var path = require('path');
+
+// From: https://github.com/aorcsik/ghost-s3-storage-adapter/blob/master/index.js#L5
+var requireFromGhost = function (moduleName, blocking) {
+    try {
+        return require('ghost/' + moduleName);
+    } catch (e) {
+        if (e.code !== 'MODULE_NOT_FOUND') {
+            throw e;
+        }
+        try {
+            return require(path.join(process.cwd(), moduleName));
+        } catch (e2) {
+            if (e2.code !== 'MODULE_NOT_FOUND' || blocking) {
+                throw e;
+            }
+            return null;
+        }
+    }
+};
+
 var fs = require('fs');
 var util = require('util');
-var BaseStore = require('../../../core/server/storage/base');
-var config = require('../../../core/server/config');
+var BaseStore = requireFromGhost('core/server/storage/base', false);
+var config = requireFromGhost('core/server/config', false);
 var Promise = require('bluebird');
 var tmp = require('tmp');
 var sharp = require('sharp');
